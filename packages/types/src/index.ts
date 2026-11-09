@@ -120,3 +120,5 @@ export type ClaimResponse = {
   claimableLamports: Lamports;
 };
 
+
+export * from "./examples.js";
