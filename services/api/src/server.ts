@@ -64,25 +64,47 @@ app.get<{ Params: { marketPubkey: string } }>("/markets/:marketPubkey", async (r
   return response;
 });
 
-app.post<{ Body: CreateLaunchRequest }>("/tx/create-launch", async (request) => {
+app.post<{ Body: CreateLaunchRequest }>("/tx/create-launch", async (request, reply) => {
+  const ticker = request.body?.ticker;
+
+  if (typeof ticker !== "string" || ticker.trim() === "") {
+    return reply.code(400).send({ error: "ticker is required" });
+  }
+
+  const slug = ticker.trim().toLowerCase();
   return {
     transactionBase64: "",
-    launchPubkey: `launch_${request.body.ticker.toLowerCase()}`,
-    marketPubkey: `market_${request.body.ticker.toLowerCase()}`
+    launchPubkey: `launch_${slug}`,
+    marketPubkey: `market_${slug}`
   };
 });
 
-app.post<{ Body: TradeMarketRequest }>("/tx/trade-market", async (request) => {
-  const quote = quoteMarketTrade(
-    {
-      yesPool: 1_000_000_000n,
-      noPool: 1_000_000_000n,
-      liquidityB: 100_000_000n
-    },
-    request.body.side,
-    request.body.action,
-    BigInt(request.body.amountLamports)
-  );
+app.post<{ Body: TradeMarketRequest }>("/tx/trade-market", async (request, reply) => {
+  const { side, action, amountLamports } = request.body ?? {};
+
+  if ((side !== "YES" && side !== "NO") || (action !== "BUY" && action !== "SELL")) {
+    return reply.code(400).send({ error: "side must be YES|NO and action must be BUY|SELL" });
+  }
+
+  if (typeof amountLamports !== "string" || !/^\d+$/.test(amountLamports)) {
+    return reply.code(400).send({ error: "amountLamports must be a non-negative integer string" });
+  }
+
+  let quote: ReturnType<typeof quoteMarketTrade>;
+  try {
+    quote = quoteMarketTrade(
+      {
+        yesPool: 1_000_000_000n,
+        noPool: 1_000_000_000n,
+        liquidityB: 100_000_000n
+      },
+      side,
+      action,
+      BigInt(amountLamports)
+    );
+  } catch (error) {
+    return reply.code(400).send({ error: (error as Error).message });
+  }
 
   return {
     transactionBase64: "",

@@ -23,10 +23,15 @@ export const REFLEX_FEE_BANDS: ReadonlyArray<{
 ];
 
 export function feeSplitForProbability(probabilityBps: number): ReflexFeeSplit {
+  // Bands are half-open [min, max) so boundary values map to exactly one band;
+  // the final band is inclusive of its max (10_000 bps).
+  const lastIndex = REFLEX_FEE_BANDS.length - 1;
   const band = REFLEX_FEE_BANDS.find(
-    (candidate) =>
+    (candidate, index) =>
       probabilityBps >= candidate.minProbabilityBps &&
-      probabilityBps <= candidate.maxProbabilityBps
+      (index === lastIndex
+        ? probabilityBps <= candidate.maxProbabilityBps
+        : probabilityBps < candidate.maxProbabilityBps)
   );
 
   if (!band) {

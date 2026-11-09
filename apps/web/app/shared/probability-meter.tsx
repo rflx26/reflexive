@@ -5,7 +5,9 @@ export function ProbabilityMeter({
   probabilityBps: number;
   size?: "default" | "large";
 }) {
-  const probability = Math.round(probabilityBps / 100);
+  const probability = Number.isFinite(probabilityBps)
+    ? Math.min(100, Math.max(0, Math.round(probabilityBps / 100)))
+    : 0;
 
   return (
     <div className={`probability ${size}`}>

@@ -22,11 +22,12 @@ export class ReflexiveClient {
       }
     }
 
-    return this.request(`/markets?${params.toString()}`);
+    const search = params.toString();
+    return this.request(search ? `/markets?${search}` : "/markets");
   }
 
   async getMarket(marketPubkey: string): Promise<MarketDetailResponse> {
-    return this.request(`/markets/${marketPubkey}`);
+    return this.request(`/markets/${encodeURIComponent(marketPubkey)}`);
   }
 
   async createLaunch(body: CreateLaunchRequest): Promise<CreateLaunchResponse> {
@@ -45,7 +46,9 @@ export class ReflexiveClient {
     path: string,
     init: { method?: "GET" | "POST"; body?: unknown } = {}
   ): Promise<T> {
-    const response = await fetch(new URL(path, this.baseUrl), {
+    // Join manually: `new URL("/x", base)` would drop any path prefix on baseUrl (e.g. ".../api").
+    const url = `${this.baseUrl.replace(/\/+$/, "")}${path}`;
+    const response = await fetch(url, {
       method: init.method ?? "GET",
       headers: init.body ? { "content-type": "application/json" } : undefined,
       body: init.body ? JSON.stringify(init.body) : undefined
