@@ -136,6 +136,3 @@ export type ClaimResponse = {
   transactionBase64: string;
   claimableLamports: Lamports;
 };
-
-
-export * from "./examples.js";

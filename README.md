@@ -51,14 +51,18 @@ services/
 
 ## Development
 
-This scaffold uses pnpm workspaces. Install dependencies, then run the package scripts as each surface becomes active.
+pnpm workspaces. Postgres and Redis are not required yet.
 
 ```bash
 pnpm install
+cp .env.example .env
+pnpm dev          # web on :3000, API on :4000
 pnpm lint
 pnpm typecheck
 pnpm test
 ```
+
+Until the indexer writes real launches, the API serves a deterministic demo market set from `services/api/src/demo-markets.ts`. The web app reads it through the SDK client at `REFLEXIVE_API_URL`.
 
 The first implementation target is a local simulation plus devnet wiring. Mainnet work should wait for protocol tests, invariant coverage, and a completed runbook.
 

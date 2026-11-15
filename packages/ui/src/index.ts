@@ -1,17 +1,18 @@
+/** Brand tokens; mirrors the CSS custom properties in apps/web/app/styles.css. */
 export const tokens = {
   color: {
-    background: "#0d1117",
-    surface: "#151b23",
-    border: "#30363d",
-    text: "#f0f6fc",
-    muted: "#8b949e",
-    accent: "#2f81f7",
-    success: "#3fb950",
-    danger: "#f85149"
+    background: "#04050a",
+    text: "#eef0f7",
+    muted: "#858aa0",
+    faint: "#4d5166",
+    line: "rgba(255, 255, 255, 0.08)",
+    /** Lit intersection of the mark: probability and YES. */
+    lens: "#5fd8ff",
+    /** Violet edge light of the mark: NO and structural highlights. */
+    rim: "#8d6dff"
   },
   radius: {
-    sm: "4px",
-    md: "8px"
+    sm: "14px",
+    md: "22px"
   }
 } as const;
-
