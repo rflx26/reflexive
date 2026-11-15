@@ -59,6 +59,23 @@ export type MarketDetailResponse = {
     holders: number;
     trades: number;
   };
+  history: ProbabilityPoint[];
+  recentTrades: MarketTrade[];
+};
+
+export type ProbabilityPoint = {
+  ts: string;
+  probabilityBps: number;
+};
+
+export type MarketTrade = {
+  signature: string;
+  wallet: PubkeyString;
+  side: MarketSide;
+  action: TradeAction;
+  amountSol: number;
+  probabilityAfterBps: number;
+  ts: string;
 };
 
 export type GetMarketsQuery = {

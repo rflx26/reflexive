@@ -4,10 +4,11 @@ import { quoteMarketTrade } from "@reflexive/sdk";
 import type {
   CreateLaunchRequest,
   GetMarketsQuery,
-  MarketDetailResponse,
   MarketListResponse,
+  MarketSummary,
   TradeMarketRequest
 } from "@reflexive/types";
+import { getDemoMarket, listDemoMarkets } from "./demo-markets.js";
 
 const app = Fastify({ logger: true });
 
@@ -17,51 +18,56 @@ await app.register(cors, {
 
 app.get("/health", async () => ({ ok: true }));
 
-app.get<{ Querystring: GetMarketsQuery }>("/markets", async () => {
+const MARKET_SORTS = ["trending", "endingSoon", "highestProbability", "newest"] as const;
+const LAUNCH_STATES = ["active", "graduated", "failed", "settled"] as const;
+
+app.get<{ Querystring: Record<string, string | undefined> }>("/markets", async (request, reply) => {
+  const { state, sort = "trending", limit = "24" } = request.query;
+
+  if (state !== undefined && !(LAUNCH_STATES as readonly string[]).includes(state)) {
+    return reply.code(400).send({ error: `state must be one of ${LAUNCH_STATES.join(", ")}` });
+  }
+  if (!(MARKET_SORTS as readonly string[]).includes(sort)) {
+    return reply.code(400).send({ error: `sort must be one of ${MARKET_SORTS.join(", ")}` });
+  }
+  const parsedLimit = Number(limit);
+  if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+    return reply.code(400).send({ error: "limit must be an integer between 1 and 100" });
+  }
+
+  const nowMs = Date.now();
+  let markets = listDemoMarkets(nowMs);
+  if (state) {
+    markets = markets.filter((market) => market.state === state);
+  }
+
+  const expiry = (ts: string) => new Date(ts).getTime();
+  const byActiveFirst = (a: MarketSummary, b: MarketSummary) =>
+    Number(b.state === "active") - Number(a.state === "active");
+  const comparators: Record<NonNullable<GetMarketsQuery["sort"]>, (a: MarketSummary, b: MarketSummary) => number> = {
+    trending: (a, b) => byActiveFirst(a, b) || b.volumeSol24h - a.volumeSol24h,
+    endingSoon: (a, b) => byActiveFirst(a, b) || expiry(a.expiryTs) - expiry(b.expiryTs),
+    highestProbability: (a, b) => byActiveFirst(a, b) || b.probabilityBps - a.probabilityBps,
+    newest: (a, b) => expiry(b.expiryTs) - expiry(a.expiryTs)
+  };
+  markets.sort(comparators[sort as NonNullable<GetMarketsQuery["sort"]>]);
+
   const response: MarketListResponse = {
-    markets: [],
+    markets: markets.slice(0, parsedLimit),
     nextCursor: null
   };
 
   return response;
 });
 
-app.get<{ Params: { marketPubkey: string } }>("/markets/:marketPubkey", async (request) => {
-  const response: MarketDetailResponse = {
-    launch: {
-      pubkey: "launch_pending",
-      creator: "creator_pending",
-      tokenMint: "mint_pending",
-      name: "Pending Launch",
-      ticker: "PEND",
-      description: "Indexed market detail will replace this placeholder.",
-      imageUrl: "/placeholder-token.svg",
-      bondedSol: 0,
-      targetSol: 85,
-      expiryTs: new Date().toISOString(),
-      state: "active"
-    },
-    market: {
-      pubkey: request.params.marketPubkey,
-      probabilityBps: 5_000,
-      yesPool: "0",
-      noPool: "0",
-      settled: false,
-      result: null
-    },
-    reflex: {
-      creatorFeeBps: 2_500,
-      protocolFeeBps: 5_000,
-      reserveFeeBps: 2_500
-    },
-    stats: {
-      volumeSol24h: 0,
-      holders: 0,
-      trades: 0
-    }
-  };
+app.get<{ Params: { marketPubkey: string } }>("/markets/:marketPubkey", async (request, reply) => {
+  const market = getDemoMarket(request.params.marketPubkey);
 
-  return response;
+  if (!market) {
+    return reply.code(404).send({ error: "market not found" });
+  }
+
+  return market;
 });
 
 app.post<{ Body: CreateLaunchRequest }>("/tx/create-launch", async (request, reply) => {
