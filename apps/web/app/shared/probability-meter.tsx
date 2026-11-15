@@ -11,11 +11,13 @@ export function ProbabilityMeter({
 
   return (
     <div className={`probability ${size}`}>
-      <span>{probability}%</span>
-      <div aria-hidden="true">
-        <i style={{ width: `${probability}%` }} />
+      <div className="value">
+        <strong className="num">{probability}%</strong>
+        <span>to graduate</span>
+      </div>
+      <div className="track" aria-hidden="true">
+        <i className="fill" style={{ width: `${probability}%` }} />
       </div>
     </div>
   );
 }
-

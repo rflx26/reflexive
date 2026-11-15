@@ -62,7 +62,7 @@ pnpm typecheck
 pnpm test
 ```
 
-Until the indexer writes real launches, the API serves a deterministic demo market set from `services/api/src/demo-markets.ts`. The web app reads it through the SDK client at `REFLEXIVE_API_URL`.
+Until the indexer writes real launches, the API serves a deterministic demo market set from `services/api/src/demo-markets.ts`. The web app reads it through the SDK client at `REFLEXIVE_API_URL`. A static snapshot of that set sits at a [test url](https://nimble-iris-pa2m.here.now/) and may disappear without notice.
 
 The first implementation target is a local simulation plus devnet wiring. Mainnet work should wait for protocol tests, invariant coverage, and a completed runbook.
 
